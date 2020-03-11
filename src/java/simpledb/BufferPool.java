@@ -1,7 +1,11 @@
 package simpledb;
 
+import org.omg.PortableServer.LIFESPAN_POLICY_ID;
+
 import java.io.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -25,6 +29,9 @@ public class BufferPool {
     other classes. BufferPool should use the numPages argument to the
     constructor instead. */
     public static final int DEFAULT_PAGES = 50;
+    private int numPage;
+    private List<Page> pages;
+    DbFile dbf;
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -33,6 +40,8 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         // some code goes here
+        this.numPage=numPages;
+        pages=new ArrayList<Page>();
     }
     
     public static int getPageSize() {
@@ -67,7 +76,16 @@ public class BufferPool {
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
-        return null;
+        for (int i = 0; i < pages.size(); i++) {
+            if(pages.get(i).getId()==pid){
+                return pages.get(i);
+            }
+        }
+        if(pages.size()==numPage){
+            pages.remove(pages.size()-1);
+            pages.add(dbf.readPage(pid));
+        }
+        return pages.get(pages.size()-1);
     }
 
     /**
