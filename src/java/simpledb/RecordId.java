@@ -9,7 +9,8 @@ import java.io.Serializable;
 public class RecordId implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
+    PageId pid;
+    int tupleno;
     /**
      * Creates a new RecordId referring to the specified PageId and tuple
      * number.
@@ -21,6 +22,8 @@ public class RecordId implements Serializable {
      */
     public RecordId(PageId pid, int tupleno) {
         // some code goes here
+        this.pid=pid;
+        this.tupleno=tupleno;
     }
 
     /**
@@ -28,7 +31,7 @@ public class RecordId implements Serializable {
      */
     public int getTupleNumber() {
         // some code goes here
-        return 0;
+        return tupleno;
     }
 
     /**
@@ -36,7 +39,7 @@ public class RecordId implements Serializable {
      */
     public PageId getPageId() {
         // some code goes here
-        return null;
+        return pid;
     }
 
     /**
@@ -48,7 +51,20 @@ public class RecordId implements Serializable {
     @Override
     public boolean equals(Object o) {
         // some code goes here
-        throw new UnsupportedOperationException("implement this");
+        if(o==null){
+            return false;
+        }
+        if(o.getClass()!=this.getClass()){
+            return false;
+        }
+        RecordId other=(RecordId)o;
+        if(((RecordId) o).getPageId().equals(getPageId())){
+            if(((RecordId) o).getTupleNumber()==getTupleNumber()) {
+                return true;
+            }
+        }
+        return false;
+      //  throw new UnsupportedOperationException("implement this");
     }
 
     /**
@@ -60,7 +76,10 @@ public class RecordId implements Serializable {
     @Override
     public int hashCode() {
         // some code goes here
-        throw new UnsupportedOperationException("implement this");
+        String ha=getTupleNumber()+getPageId().hashCode()+"";
+        return Integer.parseInt(ha);
+       // return Integer.parseInt(((Integer.toString(getTupleNumber()))+(Integer.toString(getPageId().hashCode()))));
+        //throw new UnsupportedOperationException("implement this");
 
     }
 

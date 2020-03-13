@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.io.*;
 
@@ -67,8 +68,7 @@ public class HeapPage implements Page {
     */
     private int getNumTuples() {        
         // some code goes here
-        return 0;
-
+        return Math.floorDiv(BufferPool.getPageSize()*8,td.getSize()*8+1);
     }
 
     /**
@@ -78,7 +78,7 @@ public class HeapPage implements Page {
     private int getHeaderSize() {        
         
         // some code goes here
-        return 0;
+        return (int) Math.ceil(getNumTuples()/8);
                  
     }
     
@@ -112,7 +112,8 @@ public class HeapPage implements Page {
      */
     public HeapPageId getId() {
     // some code goes here
-    throw new UnsupportedOperationException("implement this");
+        return pid;
+    //throw new UnsupportedOperationException("implement this");
     }
 
     /**
@@ -282,17 +283,44 @@ public class HeapPage implements Page {
      */
     public int getNumEmptySlots() {
         // some code goes here
-        return 0;
+        int numEmpty=0;
+        for (int i = 0; i < header.length-1; i++) {
+            Byte headerByte=header[i];
+            for(int j=0;j<8;j++){
+                numEmpty+=(1-(int)(headerByte&0x01));
+                headerByte=(byte)(headerByte>>1);
+            }
+        }
+        Byte headerByte=header[header.length-1];
+        for(int i=0;i<getNumTuples()-((header.length-1)*8);i++){
+            numEmpty+=(1-((int)((headerByte)&0x01)));
+            headerByte=(byte)(headerByte>>1);
+        }
+        return numEmpty;
     }
 
-    /**
-     * Returns true if associated slot on this page is filled.
+    /**e if associated slot on this
+     *      * Returns tru page is filled.
      */
     public boolean isSlotUsed(int i) {
         // some code goes here
-        return false;
+        i=i+1;
+        if(i%8==0){
+            int byteNum=Math.floorDiv(i,8);
+            Byte slotByte=header[byteNum-1];
+            if((slotByte>>7&0x01)==1){
+                return true;
+            }
+            else return false;
+        }
+        int front=Math.floorDiv(i,8);
+        Byte byteSlot=header[front];
+        int numBit=i%8;
+        if (((byteSlot>>(numBit-1))&0x01)==1){
+            return true;
+        }
+        else return false;
     }
-
     /**
      * Abstraction to fill or clear a slot on this page.
      */
@@ -307,7 +335,13 @@ public class HeapPage implements Page {
      */
     public Iterator<Tuple> iterator() {
         // some code goes here
-        return null;
+        List<Tuple> tuple2=new ArrayList<>();
+        for(int i=0;i<getNumTuples();i++){
+            if(tuples[i]!=null){
+                tuple2.add(tuples[i]);
+            }
+        }
+        return tuple2.iterator();
     }
 
 }
