@@ -78,7 +78,11 @@ public class HeapPage implements Page {
     private int getHeaderSize() {        
         
         // some code goes here
-        return (int) Math.ceil(getNumTuples()/8);
+        if(getNumTuples()%8==0){
+            return getNumTuples()/8;
+        }
+        else
+        return (int) Math.ceil(getNumTuples()/8+1);
                  
     }
     
@@ -304,6 +308,9 @@ public class HeapPage implements Page {
      */
     public boolean isSlotUsed(int i) {
         // some code goes here
+        if((i+1)>numSlots){
+            return false;
+        }
         i=i+1;
         if(i%8==0){
             int byteNum=Math.floorDiv(i,8);
@@ -314,6 +321,9 @@ public class HeapPage implements Page {
             else return false;
         }
         int front=Math.floorDiv(i,8);
+        if(front==42&&header.length<43){
+            int a=1;
+        }
         Byte byteSlot=header[front];
         int numBit=i%8;
         if (((byteSlot>>(numBit-1))&0x01)==1){

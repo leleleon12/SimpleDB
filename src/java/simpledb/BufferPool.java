@@ -31,7 +31,6 @@ public class BufferPool {
     public static final int DEFAULT_PAGES = 50;
     private int numPage;
     private List<Page> pages;
-    DbFile dbf;
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -74,17 +73,18 @@ public class BufferPool {
      * @param perm the requested permissions on the page
      */
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
-        throws TransactionAbortedException, DbException {
+            throws TransactionAbortedException, DbException {
         // some code goes here
+        DbFile dbf=Database.getCatalog().getDatabaseFile(pid.getTableId());
         for (int i = 0; i < pages.size(); i++) {
-            if(pages.get(i).getId()==pid){
+            if(pages.get(i).getId().equals(pid)){
                 return pages.get(i);
             }
         }
         if(pages.size()==numPage){
             pages.remove(pages.size()-1);
-            pages.add(dbf.readPage(pid));
         }
+        pages.add(dbf.readPage(pid));
         return pages.get(pages.size()-1);
     }
 
