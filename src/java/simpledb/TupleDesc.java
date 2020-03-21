@@ -142,13 +142,13 @@ public class TupleDesc implements Serializable {
     public int fieldNameToIndex(String name) throws NoSuchElementException {
         // some code goes here
         if (name ==null){
-            throw new NoSuchElementException();
-        }
+        throw new NoSuchElementException();
+    }
         for(int i=0;i<items.size();i++){
-            if(name.equals(items.get(i).fieldName)){
-                return i;
-            }
+        if(name.equals(items.get(i).fieldName)){
+            return i;
         }
+    }
         throw new NoSuchElementException();
     }
 
@@ -221,7 +221,7 @@ public class TupleDesc implements Serializable {
         if (this.numFields()==((TupleDesc) o).numFields()) {
             for (int i = 0; i < numFields(); i++) {
                 if (items.get(i).fieldType != ((TupleDesc) o).items.get(i).fieldType) {
-                    return true;
+                    return false;
                 }
             }
             return true;
@@ -246,9 +246,9 @@ public class TupleDesc implements Serializable {
         // some code goes here
         String desString="";
         for (int i = 0; i < numFields()-1; i++) {
-            desString+="fieldType["+i+"](fieldName["+i+"]),";
+            desString+=getFieldType(i).toString()+'('+getFieldName(i)+')'+',';
         }
-        desString+="fieldType["+(numFields()-1)+"](fieldName["+(numFields()-1)+"]),";
+        desString+=getFieldType(numFields()-1).toString()+'('+getFieldName(numFields()-1)+')'+',';
         return desString;
     }
 }

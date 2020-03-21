@@ -321,9 +321,6 @@ public class HeapPage implements Page {
             else return false;
         }
         int front=Math.floorDiv(i,8);
-        if(front==42&&header.length<43){
-            int a=1;
-        }
         Byte byteSlot=header[front];
         int numBit=i%8;
         if (((byteSlot>>(numBit-1))&0x01)==1){

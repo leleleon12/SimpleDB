@@ -44,17 +44,17 @@ public class Catalog {
      * @param pkeyField the name of the primary key field
      */
     public void addTable(DbFile file, String name, String pkeyField) {
-        // some code goes here
-       if(tables.size()!=0) {
-            for (int i = 0; i < tables.size(); i++) {
-                if (tablesName.get(i).equals(name)||tables.get(i).getId()==file.getId()) {
-                    tables.set(i, file);
-                    tablesName.set(i, name);
-                    tablesPkeyFields.set(i, pkeyField);
-                    return;
+            // some code goes here
+            if(tables.size()!=0) {
+                for (int i = 0; i < tables.size(); i++) {
+                    if (tablesName.get(i).equals(name)||tables.get(i).getId()==file.getId()) {
+                        tables.set(i, file);
+                        tablesName.set(i, name);
+                        tablesPkeyFields.set(i, pkeyField);
+                        return;
+                    }
                 }
             }
-        }
         tables.add(file);
         tablesName.add(name);
         tablesPkeyFields.add(pkeyField);
