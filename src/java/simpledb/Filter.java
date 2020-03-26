@@ -12,7 +12,7 @@ public class Filter extends Operator {
     private OpIterator iterator;
     private OpIterator[] opIterators=null;
     private boolean open=false;
-    Tuple next=null;
+    private Tuple next=null;
 
     /**
      * Constructor accepts a predicate to apply and a child operator to read

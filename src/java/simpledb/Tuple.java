@@ -16,7 +16,7 @@ public class Tuple implements Serializable {
     private static final long serialVersionUID = 1L;
     private TupleDesc schema;
     private RecordId rid;
-    List<Field> fields;
+    private List<Field> fields;
 
 
     /**
