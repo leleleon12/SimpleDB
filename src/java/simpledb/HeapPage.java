@@ -17,8 +17,10 @@ public class HeapPage implements Page {
     final HeapPageId pid;
     final TupleDesc td;
     final byte header[];
-    final Tuple tuples[];
+    private Tuple tuples[];
     final int numSlots;
+    private TransactionId dirtierTid;
+    private boolean dirty;
 
     byte[] oldData;
     private final Byte oldDataLock=new Byte((byte)0);
@@ -54,7 +56,10 @@ public class HeapPage implements Page {
         try{
             // allocate and read the actual records of this page
             for (int i=0; i<tuples.length; i++)
-                tuples[i] = readNextTuple(dis,i);
+                if (isSlotUsed(i)) {
+                    tuples[i] = readNextTuple(dis, i);
+                }
+                else tuples[i]=null;
         }catch(NoSuchElementException e){
             e.printStackTrace();
         }
@@ -250,6 +255,17 @@ public class HeapPage implements Page {
     public void deleteTuple(Tuple t) throws DbException {
         // some code goes here
         // not necessary for lab1
+        if(t.getRecordId().getPageId()!=pid){
+            throw new DbException("tuple is not in this page");
+        }
+        if (t.getRecordId().getTupleNumber()+1>numSlots){
+            throw new DbException("tpno exceed the page");
+        }
+        if (!isSlotUsed(t.getRecordId().getTupleNumber())){
+            throw new DbException("slot is already empty");
+        }
+        tuples[t.getRecordId().getTupleNumber()]=null;
+        markSlotUsed(t.getRecordId().getTupleNumber(),false);
     }
 
     /**
@@ -259,9 +275,25 @@ public class HeapPage implements Page {
      *         is mismatch.
      * @param t The tuple to add.
      */
-    public void insertTuple(Tuple t) throws DbException {
+    public void insertTuple(Tuple t) throws DbException, IOException {
         // some code goes here
         // not necessary for lab1
+        if (getNumEmptySlots()==0){
+            throw new DbException("there is no empty slots in page");
+        }
+        if (!t.getTupleDesc().equals(td)){
+            throw new DbException("the tupledes is not equal to this");
+        }
+        for (int i=0;i<numSlots;i++){
+            if (!isSlotUsed(i)){
+                RecordId rid=new RecordId(pid,i);
+                t.setRecordId(rid);
+                tuples[i]=t;
+                markSlotUsed(i,true);
+           //     Database.getCatalog().getDatabaseFile(pid.tableId).writePage(this);
+                return;
+            }
+        }
     }
 
     /**
@@ -271,6 +303,10 @@ public class HeapPage implements Page {
     public void markDirty(boolean dirty, TransactionId tid) {
         // some code goes here
 	// not necessary for lab1
+        this.dirty=dirty;
+        if (dirty){
+            dirtierTid=tid;
+        }
     }
 
     /**
@@ -279,6 +315,9 @@ public class HeapPage implements Page {
     public TransactionId isDirty() {
         // some code goes here
 	// Not necessary for lab1
+        if (dirty){
+            return dirtierTid;
+        }
         return null;      
     }
 
@@ -334,6 +373,40 @@ public class HeapPage implements Page {
     private void markSlotUsed(int i, boolean value) {
         // some code goes here
         // not necessary for lab1
+        if (value) {
+            i = i + 1;
+            if (i % 8 == 0) {
+                int byteNum = Math.floorDiv(i, 8);
+                header[byteNum - 1] = (byte) (header[byteNum - 1] | 0x80);
+            } else {
+                int front = Math.floorDiv(i, 8);
+                byte byteSlot = header[front];
+                int numBit = i % 8;
+                byte b = byteSlot;
+                byte b1 = (byte) ((byteSlot >> (numBit - 1)) | 0x01);
+                b1 = (byte) (b1 << (numBit - 1));
+                b = (byte) (b | b1);
+                header[front] = b;
+            }
+        } else {
+            i = i + 1;
+            if (i % 8 == 0) {
+                int byteNum = Math.floorDiv(i, 8);
+                header[byteNum - 1] = (byte) (header[byteNum - 1] & 0x7F);
+            } else {
+                int front = Math.floorDiv(i, 8);
+                byte byteSlot = header[front];
+                int numBit = i % 8;
+                byte b = byteSlot;
+                byte b1 = (byte) ((byteSlot >> (numBit - 1)) & 0xFE);
+                for (int j = 0; j < numBit-1; j++) {
+                    b1 = (byte) ((b1 << 1) | 0x01);
+                }
+                b = (byte) (b & b1);
+                header[front] = b;
+            }
+        }
+        return;
     }
 
     /**

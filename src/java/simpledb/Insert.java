@@ -1,5 +1,7 @@
 package simpledb;
 
+import java.io.IOException;
+
 /**
  * Inserts tuples read from the child operator into the tableId specified in the
  * constructor
@@ -7,7 +9,13 @@ package simpledb;
 public class Insert extends Operator {
 
     private static final long serialVersionUID = 1L;
-
+    private int tableId;
+    private OpIterator childOper;
+    private TransactionId tid;
+    private boolean open=false;
+    private boolean hasCalled=false;
+    private OpIterator[] opIterators;
+    private Tuple next=null;
     /**
      * Constructor.
      *
@@ -24,25 +32,50 @@ public class Insert extends Operator {
     public Insert(TransactionId t, OpIterator child, int tableId)
             throws DbException {
         // some code goes here
+        tid=t;
+        childOper=child;
+        this.tableId=tableId;
     }
 
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+        return childOper.getTupleDesc();
     }
 
     public void open() throws DbException, TransactionAbortedException {
         // some code goes here
+        childOper.open();
+        open=true;
     }
 
     public void close() {
         // some code goes here
+        childOper.close();
+        open=false;
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
+        childOper.rewind();
+        open=true;
     }
-
+    public boolean hasNext() throws TransactionAbortedException, DbException {
+        if (next==null){
+            next=fetchNext();
+        }
+        if (next==null){
+            return false;
+        }
+        else return true;
+    }
+    public Tuple next() throws TransactionAbortedException, DbException {
+        if (next==null){
+            next=fetchNext();
+        }
+        Tuple tuple=next;
+        next=null;
+        return tuple;
+    }
     /**
      * Inserts tuples read from child into the tableId specified by the
      * constructor. It returns a one field tuple containing the number of
@@ -58,17 +91,45 @@ public class Insert extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        return null;
+        if (!hasCalled) {
+            int i = 0;
+            while (childOper.hasNext()) {
+                try {
+                    Database.getBufferPool().insertTuple(tid, tableId, childOper.next());
+                    i++;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            Type type[] = {Type.INT_TYPE};
+            String field[] = {"nums"};
+            TupleDesc tupleDesc = new TupleDesc(type, field);
+            Tuple tuple = new Tuple(tupleDesc);
+            IntField intField = new IntField(i);
+            tuple.setField(0, intField);
+            hasCalled=true;
+            return tuple;
+        }
+        else return null;
     }
 
     @Override
     public OpIterator[] getChildren() {
         // some code goes here
-        return null;
+        if (opIterators==null) {
+            opIterators = new OpIterator[1];
+            opIterators[0]=childOper;
+        }
+        return opIterators;
     }
 
     @Override
     public void setChildren(OpIterator[] children) {
         // some code goes here
+        opIterators=new OpIterator[children.length+1];
+        for (int i = 0; i <children.length ; i++) {
+            opIterators[i]=children[i];
+        }
+        opIterators[children.length]=childOper;
     }
 }
