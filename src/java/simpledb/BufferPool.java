@@ -5,6 +5,7 @@ import org.omg.PortableServer.LIFESPAN_POLICY_ID;
 import java.io.*;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -81,10 +82,12 @@ public class BufferPool {
                 return pages.get(i);
             }
         }
-        DbFile dbf=Database.getCatalog().getDatabaseFile(pid.getTableId());
+
         if(pages.size()==numPage){
-            pages.remove(pages.size()-1);
+            //pages.remove(pages.size()-1);
+            evictPage();
         }
+        DbFile dbf=Database.getCatalog().getDatabaseFile(pid.getTableId());
         pages.add(dbf.readPage(pid));
         return pages.get(pages.size()-1);
     }
@@ -215,7 +218,9 @@ public class BufferPool {
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
         // not necessary for lab1
-
+        for(int i=0;i<pages.size();i++){
+            flushPage(pages.get(i).getId());
+        }
     }
 
     /** Remove the specific page id from the buffer pool.
@@ -229,6 +234,12 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
         // not necessary for lab1
+        int i=0;
+        for ( ;i<numPage;i++){
+            if (pages.get(i).getId()==pid)
+                break;
+        }
+        pages.remove(i);
     }
 
     /**
@@ -238,6 +249,16 @@ public class BufferPool {
     private synchronized  void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
+        int i=0;
+        for (;i<numPage;i++){
+            if (pages.get(i).getId()==pid){
+                break;
+            }
+        }
+        if (pages.get(i).isDirty()!=null) {
+            pages.get(i).markDirty(false,null);
+            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(pages.get(i));
+        }
     }
 
     /** Write all pages of the specified transaction to disk.
@@ -254,6 +275,12 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
+        try {
+            flushPage(pages.get(0).getId());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        pages.remove(0);
     }
 
 }

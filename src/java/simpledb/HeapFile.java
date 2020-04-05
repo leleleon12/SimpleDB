@@ -20,42 +20,66 @@ public class HeapFile implements DbFile {
     private TupleDesc td;
     private final int id;
     private byte[] b;
-    private final BufferPool bfp;
-    public class HeapfileIterator implements DbFileIterator{
+
+    public class HeapfileIterator implements DbFileIterator {
         Iterator<Tuple> tupleIterator;
         List<Tuple> tuples;
-        public HeapfileIterator(TransactionId tid){
-            tupleIterator=null;
-            tuples=new ArrayList<>();
-            for (int pgno=0;pgno<numPages();pgno++){
-                HeapPageId hpid=new HeapPageId(getId(),pgno);
-                HeapPage page=null;
-                Iterator pageIterator=null;
+        Iterator pageIterator = null;
+        TransactionId tid;
+        int pgno = 0;
+
+        public HeapfileIterator(TransactionId tid) {
+            tupleIterator = null;
+            tuples = new ArrayList<>();
+            this.tid = tid;
+        }
+
+        @Override
+        public void open() throws DbException, TransactionAbortedException {
+            if (tuples == null) {
+                throw new DbException("tuples of file==null");
+            }
+            BufferPool bfp = Database.getBufferPool();
+            HeapPageId hpid = new HeapPageId(getId(), pgno);
+            HeapPage page = null;
+            try {
+                page = (HeapPage) bfp.getPage(tid, hpid, Permissions.READ_ONLY);
+                pgno++;
+                pageIterator = page.iterator();
+            } catch (TransactionAbortedException e) {
+                e.printStackTrace();
+            } catch (DbException e) {
+                e.printStackTrace();
+            }
+            while (pageIterator.hasNext()) {
+                tuples.add((Tuple) pageIterator.next());
+            }
+        tupleIterator=tuples.iterator();
+    }
+        @Override
+        public boolean hasNext() throws DbException, TransactionAbortedException {
+            if(tupleIterator==null){
+                return false;
+            }
+            if (!tupleIterator.hasNext()&&(pgno<numPages()))
+            {
+                tuples.clear();
+                BufferPool bfp = Database.getBufferPool();
+                HeapPageId hpid = new HeapPageId(getId(), pgno);
+                HeapPage page = null;
                 try {
-                    page=(HeapPage)bfp.getPage(tid,hpid,Permissions.READ_ONLY);
-                    pageIterator=page.iterator();
+                    page = (HeapPage) bfp.getPage(tid, hpid, Permissions.READ_ONLY);
+                    pgno++;
+                    pageIterator = page.iterator();
                 } catch (TransactionAbortedException e) {
                     e.printStackTrace();
                 } catch (DbException e) {
                     e.printStackTrace();
                 }
-                while(pageIterator.hasNext()){
+                while (pageIterator.hasNext()) {
                     tuples.add((Tuple) pageIterator.next());
                 }
-            }
-        }
-        @Override
-        public void open() throws DbException, TransactionAbortedException {
-            if(tuples==null){
-                throw new DbException("tuples of file==null");
-            }
-            tupleIterator=tuples.iterator();
-        }
-
-        @Override
-        public boolean hasNext() throws DbException, TransactionAbortedException {
-            if(tupleIterator==null){
-                return false;
+                tupleIterator=tuples.iterator();
             }
             return tupleIterator.hasNext();
         }
@@ -76,12 +100,15 @@ public class HeapFile implements DbFile {
             if(tupleIterator==null){
                 throw new DbException("cannot rewind the Heapfileiterator");
             }
-            tupleIterator=tuples.iterator();
+            close();
+            open();
         }
 
         @Override
         public void close() {
             tupleIterator=null;
+            pgno=0;
+            tuples.clear();
         }
     }
 
@@ -94,7 +121,6 @@ public class HeapFile implements DbFile {
      */
     public HeapFile(File f, TupleDesc td)  {
         // some code goes here
-        bfp=Database.getBufferPool();
         file=f;
         this.td=td;
         id=f.getAbsoluteFile().hashCode();
@@ -199,7 +225,7 @@ public class HeapFile implements DbFile {
     public ArrayList<Page> insertTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-
+        BufferPool bfp=Database.getBufferPool();
         HeapPageId hpid;
         HeapPage page=null;
         boolean flag=false;
@@ -228,6 +254,7 @@ public class HeapFile implements DbFile {
             TransactionAbortedException, IOException {
         // some code goes here
         // not necessary for lab1
+        BufferPool bfp=Database.getBufferPool();
         if (t.getRecordId().getPageId().getTableId()!=getId()){
             throw new DbException("this tuple do not belong to this file");
         }
