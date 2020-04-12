@@ -971,7 +971,7 @@ public class BTreeFile implements DbFile {
 	 * @throws TransactionAbortedException
 	 */
 	protected void setEmptyPage(TransactionId tid, HashMap<PageId, Page> dirtypages, int emptyPageNo) 
-			throws DbException, IOException, TransactionAbortedException {
+			throws DbException,IOException, TransactionAbortedException {
 
 		// if this is the last page in the file (and not the only page), just 
 		// truncate the file
@@ -1180,7 +1180,7 @@ class BTreeSearchIterator extends AbstractDbFileIterator {
 	 * Open this iterator by getting an iterator on the first leaf page applicable
 	 * for the given predicate operation
 	 */
-	public void open() throws DbException, TransactionAbortedException {
+	public void open() throws DbException, TransactionAbortedException{
 		BTreeRootPtrPage rootPtr = (BTreeRootPtrPage) Database.getBufferPool().getPage(
 				tid, BTreeRootPtrPage.getId(f.getId()), Permissions.READ_ONLY);
 		BTreePageId root = rootPtr.getRootId();
@@ -1202,7 +1202,7 @@ class BTreeSearchIterator extends AbstractDbFileIterator {
 	 */
 	@Override
 	protected Tuple readNext() throws TransactionAbortedException, DbException,
-	NoSuchElementException {
+			NoSuchElementException {
 		while (it != null) {
 
 			while (it.hasNext()) {

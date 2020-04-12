@@ -17,9 +17,9 @@ public interface DbFile {
      *
      * @throws IllegalArgumentException if the page does not exist in this file.
      */
-    public Page readPage(PageId id);
+    public Page readPage(PageId id) throws IllegalArgumentException;
 
-    /**
+     /**
      * Push the specified page to disk.
      *
      * @param p The page to write.  page.getId().pageno() specifies the offset into the file where the page should be written.

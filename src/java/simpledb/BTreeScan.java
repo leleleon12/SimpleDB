@@ -127,7 +127,7 @@ public class BTreeScan implements OpIterator {
 	}
 
 	public Tuple next() throws NoSuchElementException,
-	TransactionAbortedException, DbException {
+			TransactionAbortedException, DbException {
 		if (!isOpen)
 			throw new IllegalStateException("iterator is closed");
 
@@ -140,7 +140,7 @@ public class BTreeScan implements OpIterator {
 	}
 
 	public void rewind() throws DbException, NoSuchElementException,
-	TransactionAbortedException {
+			TransactionAbortedException {
 		close();
 		open();
 	}
