@@ -16,6 +16,7 @@ public class Insert extends Operator {
     private boolean hasCalled=false;
     private OpIterator[] opIterators;
     private Tuple next=null;
+    private Tuple res;
     /**
      * Constructor.
      *
@@ -35,11 +36,15 @@ public class Insert extends Operator {
         tid=t;
         childOper=child;
         this.tableId=tableId;
+        Type type[] = {Type.INT_TYPE};
+        String field[] = {"nums"};
+        TupleDesc tupleDesc = new TupleDesc(type, field);
+        res = new Tuple(tupleDesc);
     }
 
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return childOper.getTupleDesc();
+        return res.getTupleDesc();
     }
 
     public void open() throws DbException, TransactionAbortedException {
@@ -101,14 +106,10 @@ public class Insert extends Operator {
                     e.printStackTrace();
                 }
             }
-            Type type[] = {Type.INT_TYPE};
-            String field[] = {"nums"};
-            TupleDesc tupleDesc = new TupleDesc(type, field);
-            Tuple tuple = new Tuple(tupleDesc);
             IntField intField = new IntField(i);
-            tuple.setField(0, intField);
+            res.setField(0, intField);
             hasCalled=true;
-            return tuple;
+            return res;
         }
         else return null;
     }
