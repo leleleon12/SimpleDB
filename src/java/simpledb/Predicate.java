@@ -8,9 +8,9 @@ import java.io.Serializable;
 public class Predicate implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    int field;
-    Op op;
-    Field operand;
+    private int field;
+    private Op op;
+    private Field operand;
 
     /** Constants used for return codes in Field.compare */
     public enum Op implements Serializable {

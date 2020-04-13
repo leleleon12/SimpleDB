@@ -11,7 +11,7 @@ public class Delete extends Operator {
     private static final long serialVersionUID = 1L;
     private TransactionId tid;
     private OpIterator childOpiter;
-    private Tuple next=null;
+    //private Tuple next=null;
     private OpIterator[] opIterators;
     private boolean hasDeleted=false;
     /**
@@ -37,34 +37,36 @@ public class Delete extends Operator {
     public void open() throws DbException, TransactionAbortedException {
         // some code goes here
         childOpiter.open();
+        open=true;
     }
 
     public void close() {
         // some code goes here
         childOpiter.close();
+        open=false;
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
         childOpiter.rewind();
     }
-    public Tuple next() throws TransactionAbortedException, DbException {
-        if (next==null){
-            next=fetchNext();
-        }
-        Tuple tuple=next;
-        next=null;
-        return tuple;
-    }
-    public boolean hasNext() throws TransactionAbortedException, DbException {
-        if (next==null){
-            next=fetchNext();
-        }
-        if (next==null){
-            return false;
-        }
-        else return true;
-    }
+//    public Tuple next() throws TransactionAbortedException, DbException {
+//        if (next==null){
+//            next=fetchNext();
+//        }
+//        Tuple tuple=next;
+//        next=null;
+//        return tuple;
+//    }
+//    public boolean hasNext() throws TransactionAbortedException, DbException {
+//        if (next==null){
+//            next=fetchNext();
+//        }
+//        if (next==null){
+//            return false;
+//        }
+//        else return true;
+//    }
     /**
      * Deletes tuples as they are read from the child operator. Deletes are
      * processed via the buffer pool (which can be accessed via the

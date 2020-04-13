@@ -202,7 +202,7 @@ public class HeapFile implements DbFile {
         // not necessary for lab1
         byte[] b=this.b;
         if (page.getId().getPageNumber()+1>numPages()){
-            this.b=Arrays.copyOf(b,BufferPool.getPageSize()*(page.getId().getPageNumber()+1));
+            this.b=Arrays.copyOf(b,BufferPool.getPageSize()*(numPages()+1));
         }
         int off=(page.getId().getPageNumber())*BufferPool.getPageSize();
         byte[]pagebyte=page.getPageData();

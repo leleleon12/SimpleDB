@@ -20,7 +20,7 @@ public class IntegerAggregator implements Aggregator {
     private List<Tuple> result;
     private TupleDesc tupleDesc;
     private List<Integer> count;
-    private List<Integer>avg_Count;
+    private List<Integer> avg_Count;
 
     /**
      * Aggregate constructor
@@ -35,7 +35,7 @@ public class IntegerAggregator implements Aggregator {
 
     public IntegerAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
         // some code goes here
-        avg_Count=new ArrayList<>();
+        avg_Count = new ArrayList<>();
         result = new ArrayList<>();
         count = new ArrayList<>();
         if (gbfield == NO_GROUPING) {
@@ -77,12 +77,12 @@ public class IntegerAggregator implements Aggregator {
                     int newRes;
                     if (count.get(0) != 0) {
                         count.set(0, count.get(0) + 1);
-                        avg_Count.set(0,avg_Count.get(0)+tupAgField.getValue());
-                        newRes = avg_Count.get(0)/ count.get(0);
+                        avg_Count.set(0, avg_Count.get(0) + tupAgField.getValue());
+                        newRes = avg_Count.get(0) / count.get(0);
                     } else {
                         newRes = tupAgField.getValue();
-                        avg_Count.set(0,newRes);
-                        count.set(0,1);
+                        avg_Count.set(0, newRes);
+                        count.set(0, 1);
                     }
                     IntField newField = new IntField(newRes);
                     result.get(0).setField(0, newField);
@@ -162,9 +162,8 @@ public class IntegerAggregator implements Aggregator {
                                 result.get(i).setField(1, tupAgField);
                                 flag = true;
                                 break;
-                            }
-                            else {
-                                flag=true;
+                            } else {
+                                flag = true;
                                 break;
                             }
                         }
@@ -181,9 +180,8 @@ public class IntegerAggregator implements Aggregator {
                                 result.get(i).setField(1, tupAgField);
                                 flag = true;
                                 break;
-                            }
-                            else {
-                                flag=true;
+                            } else {
+                                flag = true;
                                 break;
                             }
                         }
@@ -197,8 +195,8 @@ public class IntegerAggregator implements Aggregator {
                     for (int i = 0; i < result.size(); i++) {
                         if (result.get(i).getField(0).equals(tupGbfield)) {
                             count.set(i, count.get(i) + 1);
-                            avg_Count.set(i,avg_Count.get(i)+tupAgField.getValue());
-                            int newRes = avg_Count.get(i)/ count.get(i);
+                            avg_Count.set(i, avg_Count.get(i) + tupAgField.getValue());
+                            int newRes = avg_Count.get(i) / count.get(i);
                             IntField newField = new IntField(newRes);
                             result.get(i).setField(1, newField);
                             flag = true;

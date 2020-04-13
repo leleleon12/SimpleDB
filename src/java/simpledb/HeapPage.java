@@ -290,7 +290,8 @@ public class HeapPage implements Page {
                 t.setRecordId(rid);
                 tuples[i]=t;
                 markSlotUsed(i,true);
-           //     Database.getCatalog().getDatabaseFile(pid.tableId).writePage(this);
+                //this.markDirty(true,isDirty());
+              // Database.getCatalog().getDatabaseFile(pid.tableId).writePage(this);
                 return;
             }
         }

@@ -11,13 +11,13 @@ public class Filter extends Operator {
     private Predicate predicate;
     private OpIterator iterator;
     private OpIterator[] opIterators=null;
-    private boolean open=false;
-    private Tuple next=null;
+   // private boolean open=false;
+    // private Tuple next=null;
 
     /**
      * Constructor accepts a predicate to apply and a child operator to read
      * tuples to filter from.
-     * 
+     *
      * @param p
      *            The predicate to filter tuples with
      * @param child
@@ -55,32 +55,33 @@ public class Filter extends Operator {
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
-
+        close();
+        open();
         iterator.rewind();
     }
-  public boolean hasNext() throws DbException, TransactionAbortedException {
-     if (open) {
-         if (next==null)
-            next=fetchNext();                                                           //fetchnext()会将接代器后移，注意next和hasnext要保持迭代器当前位置
-         return next!=null;
-        }
-        throw new IllegalStateException();
-    }
-   public Tuple next() throws DbException, TransactionAbortedException,NoSuchElementException {
-        if (next==null)
-            next=fetchNext();
-        if (next==null){
-            throw new NoSuchElementException();
-        }
-        Tuple res=next;
-        next=null;
-        return res;
-    }
+//  public boolean hasNext() throws DbException, TransactionAbortedException {
+//     if (open) {
+//         if (next==null)
+//            next=fetchNext();                                                           //fetchnext()会将接代器后移，注意next和hasnext要保持迭代器当前位置
+//         return next!=null;
+//        }
+//        throw new IllegalStateException();
+//    }
+//   public Tuple next() throws DbException, TransactionAbortedException,NoSuchElementException {
+//        if (next==null)
+//            next=fetchNext();
+//        if (next==null){
+//            throw new NoSuchElementException();
+//        }
+//        Tuple res=next;
+//        next=null;
+//        return res;
+//    }
     /**
      * AbstractDbIterator.readNext implementation. Iterates over tuples from the
      * child operator, applying the predicate to them and returning those that
      * pass the predicate (i.e. for which the Predicate.filter() returns true.)
-     * 
+     *
      * @return The next tuple that passes the filter, or null if there are no
      *         more tuples
      * @see Predicate#filter
@@ -110,11 +111,11 @@ public class Filter extends Operator {
     @Override
     public void setChildren(OpIterator[] children) {
         // some code goes here
-            opIterators=new OpIterator[children.length+1];
-            for (int i = 0; i <children.length ; i++) {
-                opIterators[i]=children[i];
-            }
-            opIterators[children.length]=iterator;
+        opIterators=new OpIterator[children.length+1];
+        for (int i = 0; i <children.length ; i++) {
+            opIterators[i]=children[i];
+        }
+        opIterators[children.length]=iterator;
     }
 
 }

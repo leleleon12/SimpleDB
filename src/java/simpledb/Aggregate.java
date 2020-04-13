@@ -19,7 +19,7 @@ public class Aggregate extends Operator {
     private Aggregator aggregator;
     private OpIterator opIterator;
     private OpIterator[] opIterators=null;
-    private Tuple next=null;
+   // private Tuple next=null;
     /**
      * Constructor.
      * 
@@ -112,6 +112,7 @@ public class Aggregate extends Operator {
     public void open() throws NoSuchElementException, DbException,
 	    TransactionAbortedException {
 	// some code goes here
+        open=true;
         tupleIterator.open();
         if (afieldType==Type.INT_TYPE){
             aggregator=new IntegerAggregator(groupField(),gfieldType,afield,op);
@@ -131,22 +132,22 @@ public class Aggregate extends Operator {
         }
         tupleIterator.close();
     }
-    public boolean hasNext() throws TransactionAbortedException, DbException {
-        if (next==null){
-            next=fetchNext();
-        }
-        return next!=null;
-    }
-    public Tuple next() throws TransactionAbortedException, DbException {
-        if (next==null)
-            next=fetchNext();
-        if (next==null){
-            throw new NoSuchElementException();
-        }
-        Tuple res=next;
-        next=null;
-        return res;
-    }
+//    public boolean hasNext() throws TransactionAbortedException, DbException {
+//        if (next==null){
+//            next=fetchNext();
+//        }
+//        return next!=null;
+//    }
+//    public Tuple next() throws TransactionAbortedException, DbException {
+//        if (next==null)
+//            next=fetchNext();
+//        if (next==null){
+//            throw new NoSuchElementException();
+//        }
+//        Tuple res=next;
+//        next=null;
+//        return res;
+//    }
     /**
      * Returns the next tuple. If there is a group by field, then the first
      * field is the field by which we are grouping, and the second field is the
@@ -164,6 +165,8 @@ public class Aggregate extends Operator {
 
     public void rewind() throws DbException, TransactionAbortedException {
 	// some code goes here
+        close();
+        open();
         opIterator.rewind();
     }
 
@@ -186,6 +189,7 @@ public class Aggregate extends Operator {
     public void close() {
 	// some code goes here
         opIterator.close();
+        open=false;
     }
 
     @Override

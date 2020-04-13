@@ -9,10 +9,10 @@ import java.io.Serializable;
 public class JoinPredicate implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    Predicate predicate;
-    int fieldnum1;
-    int fieldnum2;
-    Predicate.Op op;
+    private Predicate predicate;
+    private int fieldnum1;
+    private int fieldnum2;
+    private Predicate.Op op;
     /**
      * Constructor -- create a new predicate over two fields of two tuples.
      * 

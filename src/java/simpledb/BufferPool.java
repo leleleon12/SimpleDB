@@ -160,8 +160,9 @@ public class BufferPool {
         HeapPageId pageId;
         HeapPage page1;
         if (page.size()>1) {
+            int pgNo=page.get(0).getId().getPageNumber();
             for (int i = 0; i < page.size(); i++) {
-                pageId = new HeapPageId(tableId, dbFile.numPages() + i);
+                pageId = new HeapPageId(tableId, pgNo+i);
                 byte[] pageDate = page.get(i).getPageData();
                 page1 = new HeapPage(pageId, pageDate);
                 page.set(i, page1);

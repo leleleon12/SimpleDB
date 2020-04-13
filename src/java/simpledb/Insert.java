@@ -12,10 +12,10 @@ public class Insert extends Operator {
     private int tableId;
     private OpIterator childOper;
     private TransactionId tid;
-    private boolean open=false;
+    //private boolean open=false;
     private boolean hasCalled=false;
     private OpIterator[] opIterators;
-    private Tuple next=null;
+   // private Tuple next=null;
     private Tuple res;
     /**
      * Constructor.
@@ -61,26 +61,26 @@ public class Insert extends Operator {
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
-        childOper.rewind();
-        open=true;
+        close();
+        open();
     }
-    public boolean hasNext() throws TransactionAbortedException, DbException {
-        if (next==null){
-            next=fetchNext();
-        }
-        if (next==null){
-            return false;
-        }
-        else return true;
-    }
-    public Tuple next() throws TransactionAbortedException, DbException {
-        if (next==null){
-            next=fetchNext();
-        }
-        Tuple tuple=next;
-        next=null;
-        return tuple;
-    }
+//    public boolean hasNext() throws TransactionAbortedException, DbException {
+//        if (next==null){
+//            next=fetchNext();
+//        }
+//        if (next==null){
+//            return false;
+//        }
+//        else return true;
+//    }
+//    public Tuple next() throws TransactionAbortedException, DbException {
+//        if (next==null){
+//            next=fetchNext();
+//        }
+//        Tuple tuple=next;
+//        next=null;
+//        return tuple;
+//    }
     /**
      * Inserts tuples read from child into the tableId specified by the
      * constructor. It returns a one field tuple containing the number of

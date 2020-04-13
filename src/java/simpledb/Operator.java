@@ -54,7 +54,7 @@ public abstract class Operator implements OpIterator {
         this.open = false;
     }
 
-    private Tuple next = null;
+    protected Tuple next = null;
     protected boolean open = false;
     private int estimatedCardinality = 0;
 
