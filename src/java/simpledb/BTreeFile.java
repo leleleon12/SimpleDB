@@ -3,6 +3,7 @@ package simpledb;
 import java.io.*;
 import java.util.*;
 
+import org.omg.CORBA.INTERNAL;
 import simpledb.Predicate.Op;
 
 /**
@@ -195,7 +196,31 @@ public class BTreeFile implements DbFile {
 			Field f) 
 					throws DbException, TransactionAbortedException {
 		// some code goes here
-        return null;
+		if (pid.pgcateg()==BTreePageId.LEAF){
+			return (BTreeLeafPage) getPage(tid,dirtypages,pid,perm);
+		}
+		BTreePageId bTreePageId=null;
+		BTreeInternalPage internalPage=(BTreeInternalPage) getPage(tid,dirtypages,pid,Permissions.READ_ONLY);
+		if (f==null) {
+			BTreePageId pageId = internalPage.getChildId(0);
+			return findLeafPage(tid, dirtypages, pageId, perm, f);
+		}
+		else {
+			Iterator entriesIterator=internalPage.iterator();
+			BTreeEntry bTreeEntry=null;
+			boolean hasFound=false;
+			while (entriesIterator.hasNext()){
+				bTreeEntry=(BTreeEntry) entriesIterator.next();
+				if (bTreeEntry.getKey().compare(Op.GREATER_THAN_OR_EQ,f)){
+					bTreePageId=bTreeEntry.getLeftChild();
+					hasFound=true;
+					break;
+				}
+			}
+			if (!hasFound)
+			bTreePageId=bTreeEntry.getRightChild();
+		}
+        return findLeafPage(tid,dirtypages,bTreePageId,perm,f);
 	}
 	
 	/**
@@ -247,8 +272,33 @@ public class BTreeFile implements DbFile {
 		// the new entry.  getParentWithEmtpySlots() will be useful here.  Don't forget to update
 		// the sibling pointers of all the affected leaf pages.  Return the page into which a 
 		// tuple with the given key field should be inserted.
-        return null;
-		
+		BTreeLeafPage newLeafPage=(BTreeLeafPage) getEmptyPage(tid,dirtypages,BTreePageId.LEAF);
+		int tuplesToMove=(int) Math.ceil((float)page.getNumTuples()/2);
+		Iterator reverseIter=page.reverseIterator();
+		Tuple newTuple=null;
+		for (int i = 0; i < tuplesToMove; i++) {
+			newTuple=(Tuple) reverseIter.next();
+			page.deleteTuple(newTuple);
+			newLeafPage.insertTuple(newTuple);
+		}
+		BTreeEntry newEntry=new BTreeEntry(newTuple.getField(keyField()),page.getId(),newLeafPage.getId());
+        BTreeInternalPage internalPage=getParentWithEmptySlots(tid,dirtypages,page.getParentId(),newEntry.getKey());
+        internalPage.insertEntry(newEntry);
+        newLeafPage.setParentId(internalPage.getId());
+        page.setParentId(internalPage.getId());
+        newLeafPage.setRightSiblingId(page.getRightSiblingId());
+        newLeafPage.setLeftSiblingId(page.getId());
+        page.setRightSiblingId(newLeafPage.getId());
+        if (newLeafPage.getRightSiblingId()!=null) {
+			BTreeLeafPage originalRightPage = (BTreeLeafPage) getPage(tid, dirtypages, newLeafPage.getRightSiblingId(), Permissions.READ_WRITE);
+			originalRightPage.setLeftSiblingId(newLeafPage.getId());
+		}
+        dirtypages.put(page.getId(),page);
+        dirtypages.put(newLeafPage.getId(),newLeafPage);
+        if (field.compare(Op.LESS_THAN_OR_EQ,newEntry.getKey())){
+        	return page;
+		}
+        else return newLeafPage;
 	}
 	
 	/**
@@ -259,7 +309,7 @@ public class BTreeFile implements DbFile {
 	 * from the split. Update parent pointers as needed.
 	 * 
 	 * Return the internal page into which an entry with key field "field" should be inserted
-	 * 
+	 *
 	 * @param tid - the transaction id
 	 * @param dirtypages - the list of dirty pages which should be updated with all new dirty pages
 	 * @param page - the internal page to split
@@ -285,7 +335,27 @@ public class BTreeFile implements DbFile {
 		// the parent pointers of all the children moving to the new page.  updateParentPointers()
 		// will be useful here.  Return the page into which an entry with the given key field
 		// should be inserted.
-		return null;
+		int entitiesToMove=(int) Math.ceil((float)page.getNumEntries()/2)-1;
+		Iterator entitiesIter=page.reverseIterator();
+		BTreeInternalPage newRightPage=(BTreeInternalPage)getEmptyPage(tid,dirtypages, BTreePageId.INTERNAL);
+		for (int i=0;i<entitiesToMove;i++){
+			BTreeEntry movedEntry=(BTreeEntry) entitiesIter.next();
+			page.deleteKeyAndRightChild(movedEntry);
+			newRightPage.insertEntry(movedEntry);
+		}
+		BTreeEntry pushedEntry=(BTreeEntry) entitiesIter.next();
+		page.deleteKeyAndRightChild(pushedEntry);
+		pushedEntry.setLeftChild(page.getId());
+		pushedEntry.setRightChild(newRightPage.getId());
+		BTreeInternalPage newParentPage=getParentWithEmptySlots(tid,dirtypages,page.getParentId(),pushedEntry.getKey());
+		newParentPage.insertEntry(pushedEntry);
+		page.setParentId(newParentPage.getId());
+		newRightPage.setParentId(newParentPage.getId());
+		updateParentPointers(tid,dirtypages,newRightPage);
+		if (field.compare(Op.LESS_THAN_OR_EQ,pushedEntry.getKey())){
+			return page;
+		}
+		else return newRightPage;
 	}
 	
 	/**
@@ -451,12 +521,11 @@ public class BTreeFile implements DbFile {
 		// and split the leaf page if there are no more slots available
 		BTreeLeafPage leafPage = findLeafPage(tid, dirtypages, rootId, Permissions.READ_WRITE, t.getField(keyField));
 		if(leafPage.getNumEmptySlots() == 0) {
-			leafPage = splitLeafPage(tid, dirtypages, leafPage, t.getField(keyField));	
+			leafPage = splitLeafPage(tid, dirtypages, leafPage, t.getField(keyField));
 		}
 
 		// insert the tuple into the leaf page
 		leafPage.insertTuple(t);
-
 		ArrayList<Page> dirtyPagesArr = new ArrayList<Page>();
 		dirtyPagesArr.addAll(dirtypages.values());
 		return dirtyPagesArr;

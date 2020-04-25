@@ -155,18 +155,45 @@ public class BufferPool {
             throws DbException, TransactionAbortedException, IOException {
         // some code goes here
         // not necessary for lab1
-        HeapFile dbFile=(HeapFile) Database.getCatalog().getDatabaseFile(tableId);
+        DbFile dbFile= Database.getCatalog().getDatabaseFile(tableId);
         List<Page> page=dbFile.insertTuple(tid,t);
-        HeapPageId pageId;
-        HeapPage page1;
+        PageId pageId;
+        Page page1;
         if (page.size()>1) {
             int pgNo=page.get(0).getId().getPageNumber();
-            for (int i = 0; i < page.size(); i++) {
-                pageId = new HeapPageId(tableId, pgNo+i);
-                byte[] pageDate = page.get(i).getPageData();
-                page1 = new HeapPage(pageId, pageDate);
-                page.set(i, page1);
+            if (page.get(0).getClass().equals(HeapPage.class)) {
+                for (int i = 0; i < page.size(); i++) {
+                    pageId = new HeapPageId(tableId, pgNo + i);
+                    byte[] pageDate = page.get(i).getPageData();
+                    page1 = new HeapPage((HeapPageId) pageId, pageDate) {
+                    };
+                    page.set(i, page1);
+                }
             }
+//            else {
+//                for (int i = 0; i < page.size(); i++) {
+//                    BTreePageId bTreePageId=(BTreePageId)(page.get(i).getId());
+//                    int pgcat=bTreePageId.pgcateg();
+//                    pageId = new BTreePageId(tableId, pgNo + i,pgcat);
+//                    byte[] pageDate = page.get(i).getPageData();
+//                    if (pgcat==BTreePageId.LEAF){
+//                        BTreeLeafPage bTreeLeafPage=(BTreeLeafPage)page.get(i);
+//                        page1 = new BTreeLeafPage((BTreePageId) pageId, pageDate,bTreeLeafPage.keyField);
+//                        page.set(i, page1);
+//                    }
+//                    else if (pgcat==BTreePageId.ROOT_PTR){
+//                         BTreeRootPtrPage bTreeRootPtrPage=(BTreeRootPtrPage) page.get(i);
+//                        page1=new BTreeRootPtrPage((BTreePageId) pageId,pageDate);
+//                        page.set(i,page1);
+//                    }
+//                    else {
+//                        BTreeInternalPage bTreeInternalPage=(BTreeInternalPage)page.get(i);
+//                        page1=new BTreeInternalPage((BTreePageId)pageId,pageDate,bTreeInternalPage.keyField);
+//                        page.set(i,page1);
+//                    }
+//                }
+
+//            }
             for (int i = 0; i < page.size(); i++) {
                 page.get(i).markDirty(true, tid);
                 dbFile.writePage(page.get(i));
@@ -236,11 +263,10 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1
         int i=0;
-        for ( ;i<numPage;i++){
+        for ( ;i<pages.size();i++){
             if (pages.get(i).getId()==pid)
-                break;
+                pages.remove(i);
         }
-        pages.remove(i);
     }
 
     /**
