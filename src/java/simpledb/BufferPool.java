@@ -165,8 +165,8 @@ public class BufferPool {
                 for (int i = 0; i < page.size(); i++) {
                     pageId = new HeapPageId(tableId, pgNo + i);
                     byte[] pageDate = page.get(i).getPageData();
-                    page1 = new HeapPage((HeapPageId) pageId, pageDate) {
-                    };
+                    page1 = new HeapPage((HeapPageId) pageId, pageDate);
+                    dbFile.writePage(page1);
                     page.set(i, page1);
                 }
             }
@@ -196,19 +196,19 @@ public class BufferPool {
 //            }
             for (int i = 0; i < page.size(); i++) {
                 page.get(i).markDirty(true, tid);
-                dbFile.writePage(page.get(i));
+               flushPage(page.get(i).getId());
             }
         }
         else {
             page.get(0).markDirty(true,tid);
         }
-        for (int i = 0; i < page.size(); i++) {
-            for (int j=0;j<pages.size();j++){
-            if(pages.get(j).getId().equals(page.get(i).getId())) {
-                pages.set(i, page.get(0));
-            }
-            }
-        }
+//        for (int i = 0; i < page.size(); i++) {
+//            for (int j=0;j<pages.size();j++){
+//            if(pages.get(j).getId().equals(page.get(i).getId())) {
+//                pages.set(i, page.get(0));
+//            }
+//            }
+//        }
     }
 
     /**
@@ -276,17 +276,29 @@ public class BufferPool {
     private synchronized  void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
-        int i=0;
-        for (;i<numPage;i++){
-            if (pages.get(i).getId()==pid){
-                break;
-            }
+//        int i=0;
+//        for (;i<pages.size();i++){
+//            if (pages.get(i).getId()==pid){
+//                break;
+//            }
+//        }
+        Page page=null;
+        try {
+            page= getPage(null,pid,Permissions.READ_WRITE);
+        } catch (TransactionAbortedException e) {
+            e.printStackTrace();
+        } catch (DbException e) {
+            e.printStackTrace();
         }
-        if (pages.get(i).isDirty()!=null) {
-            pages.get(i).markDirty(false,null);
-            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(pages.get(i));
+//        if (pages.get(i).isDirty()!=null) {
+//            pages.get(i).markDirty(false,null);
+//            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(pages.get(i));
+//        }
+        if (page.isDirty()!=null) {
+            page.markDirty(false,null);
+            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(page);
         }
-    }
+   }
 
     /** Write all pages of the specified transaction to disk.
      */

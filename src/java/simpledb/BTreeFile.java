@@ -294,7 +294,6 @@ public class BTreeFile implements DbFile {
 			originalRightPage.setLeftSiblingId(newLeafPage.getId());
 		}
         dirtypages.put(page.getId(),page);
-        dirtypages.put(newLeafPage.getId(),newLeafPage);
         if (field.compare(Op.LESS_THAN_OR_EQ,newEntry.getKey())){
         	return page;
 		}
