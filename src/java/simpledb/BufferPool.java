@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * The BufferPool is also responsible for locking;  when a transaction fetches
  * a page, BufferPool checks that the transaction has the appropriate
  * locks to read/write the page.
- * 
+ *
  * @Threadsafe, all fields are final
  */
 public class BufferPool {
@@ -25,7 +25,7 @@ public class BufferPool {
     private static final int DEFAULT_PAGE_SIZE = 4096;
 
     private static int pageSize = DEFAULT_PAGE_SIZE;
-    
+
     /** Default number of pages passed to the constructor. This is used by
     other classes. BufferPool should use the numPages argument to the
     constructor instead. */
@@ -43,16 +43,16 @@ public class BufferPool {
         this.numPage=numPages;
         pages=new ArrayList<Page>();
     }
-    
+
     public static int getPageSize() {
       return pageSize;
     }
-    
+
     // THIS FUNCTION SHOULD ONLY BE USED FOR TESTING!!
     public static void setPageSize(int pageSize) {
     	BufferPool.pageSize = pageSize;
     }
-    
+
     // THIS FUNCTION SHOULD ONLY BE USED FOR TESTING!!
     public static void resetPageSize() {
     	BufferPool.pageSize = DEFAULT_PAGE_SIZE;
@@ -138,14 +138,14 @@ public class BufferPool {
 
     /**
      * Add a tuple to the specified table on behalf of transaction tid.  Will
-     * acquire a write lock on the page the tuple is added to and any other 
-     * pages that are updated (Lock acquisition is not needed for lab2). 
+     * acquire a write lock on the page the tuple is added to and any other
+     * pages that are updated (Lock acquisition is not needed for lab2).
      * May block if the lock(s) cannot be acquired.
-     * 
+     *
      * Marks any pages that were dirtied by the operation as dirty by calling
-     * their markDirty bit, and adds versions of any pages that have 
-     * been dirtied to the cache (replacing any existing versions of those pages) so 
-     * that future requests see up-to-date pages. 
+     * their markDirty bit, and adds versions of any pages that have
+     * been dirtied to the cache (replacing any existing versions of those pages) so
+     * that future requests see up-to-date pages.
      *
      * @param tid the transaction adding the tuple
      * @param tableId the table to add the tuple to
@@ -170,45 +170,18 @@ public class BufferPool {
                     page.set(i, page1);
                 }
             }
-//            else {
-//                for (int i = 0; i < page.size(); i++) {
-//                    BTreePageId bTreePageId=(BTreePageId)(page.get(i).getId());
-//                    int pgcat=bTreePageId.pgcateg();
-//                    pageId = new BTreePageId(tableId, pgNo + i,pgcat);
-//                    byte[] pageDate = page.get(i).getPageData();
-//                    if (pgcat==BTreePageId.LEAF){
-//                        BTreeLeafPage bTreeLeafPage=(BTreeLeafPage)page.get(i);
-//                        page1 = new BTreeLeafPage((BTreePageId) pageId, pageDate,bTreeLeafPage.keyField);
-//                        page.set(i, page1);
-//                    }
-//                    else if (pgcat==BTreePageId.ROOT_PTR){
-//                         BTreeRootPtrPage bTreeRootPtrPage=(BTreeRootPtrPage) page.get(i);
-//                        page1=new BTreeRootPtrPage((BTreePageId) pageId,pageDate);
-//                        page.set(i,page1);
-//                    }
-//                    else {
-//                        BTreeInternalPage bTreeInternalPage=(BTreeInternalPage)page.get(i);
-//                        page1=new BTreeInternalPage((BTreePageId)pageId,pageDate,bTreeInternalPage.keyField);
-//                        page.set(i,page1);
-//                    }
-//                }
-
-//            }
             for (int i = 0; i < page.size(); i++) {
                 page.get(i).markDirty(true, tid);
-               flushPage(page.get(i).getId());
+                flushPage(page.get(i).getId());
+//                if (pages.size()==numPage){
+//                    evictPage();
+//                    pages.add(page.get(i));
+//                }
             }
         }
         else {
             page.get(0).markDirty(true,tid);
         }
-//        for (int i = 0; i < page.size(); i++) {
-//            for (int j=0;j<pages.size();j++){
-//            if(pages.get(j).getId().equals(page.get(i).getId())) {
-//                pages.set(i, page.get(0));
-//            }
-//            }
-//        }
     }
 
     /**
@@ -217,9 +190,9 @@ public class BufferPool {
      * other pages that are updated. May block if the lock(s) cannot be acquired.
      *
      * Marks any pages that were dirtied by the operation as dirty by calling
-     * their markDirty bit, and adds versions of any pages that have 
-     * been dirtied to the cache (replacing any existing versions of those pages) so 
-     * that future requests see up-to-date pages. 
+     * their markDirty bit, and adds versions of any pages that have
+     * been dirtied to the cache (replacing any existing versions of those pages) so
+     * that future requests see up-to-date pages.
      *
      * @param tid the transaction deleting the tuple.
      * @param t the tuple to delete
@@ -231,10 +204,9 @@ public class BufferPool {
         DbFile dbFile=Database.getCatalog().getDatabaseFile(t.getRecordId().pid.getTableId());
         List<Page> page=dbFile.deleteTuple(tid,t);
         page.get(0).markDirty(true,tid);
-        for (int i = 0; i < pages.size(); i++) {
-            if(pages.get(i).getId().equals(page.get(0).getId())){
-                pages.set(i,page.get(0));
-            }
+        for (int i = 0; i < page.size(); i++) {
+            page.get(i).markDirty(true, tid);
+            flushPage(page.get(i).getId());
         }
     }
 
@@ -255,7 +227,7 @@ public class BufferPool {
         Needed by the recovery manager to ensure that the
         buffer pool doesn't keep a rolled back page in its
         cache.
-        
+
         Also used by B+ tree files to ensure that deleted pages
         are removed from the cache so they can be reused safely
     */
@@ -276,12 +248,7 @@ public class BufferPool {
     private synchronized  void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
-//        int i=0;
-//        for (;i<pages.size();i++){
-//            if (pages.get(i).getId()==pid){
-//                break;
-//            }
-//        }
+
         Page page=null;
         try {
             page= getPage(null,pid,Permissions.READ_WRITE);
@@ -290,10 +257,6 @@ public class BufferPool {
         } catch (DbException e) {
             e.printStackTrace();
         }
-//        if (pages.get(i).isDirty()!=null) {
-//            pages.get(i).markDirty(false,null);
-//            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(pages.get(i));
-//        }
         if (page.isDirty()!=null) {
             page.markDirty(false,null);
             Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(page);

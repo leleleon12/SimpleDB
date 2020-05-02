@@ -41,7 +41,8 @@ public class HeapPageId implements PageId {
      */
     public int hashCode() {
         // some code goes here
-        return Integer.parseInt((Integer.toString(tableId)+Integer.toString(pgNo)));
+       // return Integer.parseInt((Integer.toString(tableId)+Integer.toString(pgNo)));
+        return tableId+pgNo;
        // throw new UnsupportedOperationException("implement this");
     }
 
