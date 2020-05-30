@@ -242,10 +242,12 @@ public class HeapFile implements DbFile {
             hpid=new HeapPageId(getId(),numPages());
             page=new HeapPage(hpid,HeapPage.createEmptyPageData());
             page.insertTuple(t);
+            writePage(page);
         }
-        writePage(page);
+//        writePage(page);
         ArrayList<Page> arrayList=new ArrayList<>();
         arrayList.add(page);
+//        Database.getBufferPool().releasePage(tid,page.getId());
         return arrayList;
     }
 

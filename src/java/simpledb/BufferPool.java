@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -32,7 +33,8 @@ public class BufferPool {
     public static final int DEFAULT_PAGES = 50;
     private int numPage;
     private List<Page> pages;
-
+    private LockTable lockTable=new LockTable();
+    private ReentrantReadWriteLock rtlock=new ReentrantReadWriteLock();
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -76,13 +78,33 @@ public class BufferPool {
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws TransactionAbortedException, DbException {
         // some code goes here
-
+        if (perm==Permissions.READ_WRITE){
+            boolean result=lockTable.addXlock(pid,tid);
+                while (!result){
+                    try {
+                        Thread.sleep(500);
+                        result=lockTable.addXlock(pid,tid);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        else if (perm==Permissions.READ_ONLY){
+            boolean result=lockTable.addSlock(pid,tid);
+            while (!result){
+                try {
+                    Thread.sleep(500);
+                    result=lockTable.addSlock(pid,tid);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         for (int i = 0; i < pages.size(); i++) {
             if(pages.get(i).getId().equals(pid)){
                 return pages.get(i);
             }
         }
-
         if(pages.size()==numPage){
             //pages.remove(pages.size()-1);
             evictPage();
@@ -104,6 +126,7 @@ public class BufferPool {
     public void releasePage(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for lab1|lab2
+        lockTable.unlock(pid,tid);
     }
 
     /**
@@ -120,7 +143,7 @@ public class BufferPool {
     public boolean holdsLock(TransactionId tid, PageId p) {
         // some code goes here
         // not necessary for lab1|lab2
-        return false;
+        return lockTable.holdLock(p,tid);
     }
 
     /**
@@ -173,15 +196,15 @@ public class BufferPool {
             for (int i = 0; i < page.size(); i++) {
                 page.get(i).markDirty(true, tid);
                 flushPage(page.get(i).getId());
-//                if (pages.size()==numPage){
-//                    evictPage();
-//                    pages.add(page.get(i));
-//                }
+                releasePage(tid,page.get(i).getId());
             }
         }
         else {
             page.get(0).markDirty(true,tid);
+            flushPage(page.get(0).getId());
+            releasePage(tid,page.get(0).getId());
         }
+
     }
 
     /**
@@ -207,6 +230,7 @@ public class BufferPool {
         for (int i = 0; i < page.size(); i++) {
             page.get(i).markDirty(true, tid);
             flushPage(page.get(i).getId());
+            lockTable.unlock(page.get(i).getId(),tid);
         }
     }
 
@@ -250,16 +274,15 @@ public class BufferPool {
         // not necessary for lab1
 
         Page page=null;
-        try {
-            page= getPage(null,pid,Permissions.READ_WRITE);
-        } catch (TransactionAbortedException e) {
-            e.printStackTrace();
-        } catch (DbException e) {
-            e.printStackTrace();
-        }
+            for (int i=0;i<pages.size();i++) {
+                if (pages.get(i).getId() == pid) {
+                    page = pages.get(i);
+                }
+            }
         if (page.isDirty()!=null) {
             page.markDirty(false,null);
             Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(page);
+
         }
    }
 
@@ -277,12 +300,25 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
-        try {
-            flushPage(pages.get(0).getId());
-        } catch (IOException e) {
-            e.printStackTrace();
+        Page page=null ;
+        int index=0;
+        for (int i=0;i<pages.size();i++){
+            if (pages.get(i).isDirty()==null){
+                page = pages.get(i);
+                index=i;
+            }
         }
-        pages.remove(0);
+        if (page==null){
+            throw new DbException("no clean pages in evictpage()");
+        }
+        else {
+            try {
+                flushPage(page.getId());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            pages.remove(index);
+        }
     }
 
 }
