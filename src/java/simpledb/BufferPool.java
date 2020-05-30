@@ -33,7 +33,7 @@ public class BufferPool {
     public static final int DEFAULT_PAGES = 50;
     private int numPage;
     private List<Page> pages;
-    private LockTable lockTable=new LockTable();
+    private LockTable lockTable;
     private ReentrantReadWriteLock rtlock=new ReentrantReadWriteLock();
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -44,6 +44,7 @@ public class BufferPool {
         // some code goes here
         this.numPage=numPages;
         pages=new ArrayList<Page>();
+        lockTable=new LockTable();
     }
 
     public static int getPageSize() {
@@ -137,6 +138,7 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for lab1|lab2
+        transactionComplete(tid,true);
     }
 
     /** Return true if the specified transaction has a lock on the specified page */
@@ -157,6 +159,23 @@ public class BufferPool {
         throws IOException {
         // some code goes here
         // not necessary for lab1|lab2
+
+        for (int i=0;i<pages.size();i++){
+            if (pages.get(i).isDirty()==tid){
+                if (commit){
+                    flushPage(pages.get(i).getId());
+                }
+                else {
+                    DbFile dbf=Database.getCatalog().getDatabaseFile(pages.get(i).getId().getTableId());
+                    pages.set(i,dbf.readPage(pages.get(i).getId()));
+                }
+            }
+        }
+        for (int i=0;i<pages.size();i++){//应该先解锁再操作，否则若abort，锁
+            if (holdsLock(tid,pages.get(i).getId())){
+                releasePage(tid,pages.get(i).getId());
+            }
+        }
     }
 
     /**
@@ -195,14 +214,14 @@ public class BufferPool {
             }
             for (int i = 0; i < page.size(); i++) {
                 page.get(i).markDirty(true, tid);
-                flushPage(page.get(i).getId());
-                releasePage(tid,page.get(i).getId());
+//                flushPage(page.get(i).getId());
+//                releasePage(tid,page.get(i).getId());
             }
         }
         else {
             page.get(0).markDirty(true,tid);
-            flushPage(page.get(0).getId());
-            releasePage(tid,page.get(0).getId());
+//            flushPage(page.get(0).getId());
+//            releasePage(tid,page.get(0).getId());
         }
 
     }

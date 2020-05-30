@@ -89,7 +89,7 @@ public class HeapFile implements DbFile {
             if(tupleIterator==null){
                 throw new NoSuchElementException();
             }
-            if(tupleIterator.hasNext()==false){
+            if(!tupleIterator.hasNext()){
                 throw new NoSuchElementException();
             }
             return tupleIterator.next();
@@ -232,6 +232,9 @@ public class HeapFile implements DbFile {
         for (int i=0;i<numPages();i++){
             hpid=new HeapPageId(getId(),i);
             page=(HeapPage)(bfp.getPage(tid,hpid,Permissions.READ_WRITE));
+            if (page.getNumEmptySlots()==0){
+                Database.getBufferPool().releasePage(tid,hpid);
+            }
             if (page.getNumEmptySlots()!=0){
                 page.insertTuple(t);
                 flag=true;

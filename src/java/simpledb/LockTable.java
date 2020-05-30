@@ -83,7 +83,7 @@ public class LockTable {
     public void unlock(PageId pid,TransactionId tid){
         ArrayList<PageState> statesList=pages.get(pid);
         if (statesList!=null) {
-            for (int i = 0; i < statesList.size(); i++) {
+            for (int i = statesList.size()-1; i>=0; i--) {
                 if (statesList.get(i).getTid() == tid) {
                     statesList.remove(i);
                 }

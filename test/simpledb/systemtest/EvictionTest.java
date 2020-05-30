@@ -64,6 +64,7 @@ public class EvictionTest extends SimpleDbTestBase {
         SeqScan ss = new SeqScan(t.getId(), f.getId(), "");
         boolean found = false;
         ss.open();
+        int i=0;
         while (ss.hasNext()) {
             Tuple v = ss.next();
             int v0 = ((IntField)v.getField(0)).getValue();
