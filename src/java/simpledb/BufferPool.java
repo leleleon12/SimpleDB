@@ -79,40 +79,51 @@ public class BufferPool {
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws TransactionAbortedException, DbException {
         // some code goes here
-        if (perm==Permissions.READ_WRITE){
-            boolean result=lockTable.addXlock(pid,tid);
-                while (!result){
+        synchronized (this) {
+            if (perm == Permissions.READ_WRITE) {
+                boolean result = lockTable.addXlock(pid, tid);
+                int roundtimes=0;
+                while (!result) {
                     try {
+                        if (roundtimes==2){
+                            throw new TransactionAbortedException();
+                        }
                         Thread.sleep(500);
-                        result=lockTable.addXlock(pid,tid);
+                        result = lockTable.addXlock(pid, tid);
+                        roundtimes++;
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else if (perm == Permissions.READ_ONLY) {
+                boolean result = lockTable.addSlock(pid, tid);
+                int roundtimes=0;
+                while (!result) {
+                    try {
+                        if (roundtimes==1){
+                            throw new TransactionAbortedException();
+                        }
+                        Thread.sleep(500);
+                        result = lockTable.addSlock(pid, tid);
+                        roundtimes++;
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
             }
-        else if (perm==Permissions.READ_ONLY){
-            boolean result=lockTable.addSlock(pid,tid);
-            while (!result){
-                try {
-                    Thread.sleep(500);
-                    result=lockTable.addSlock(pid,tid);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            for (int i = 0; i < pages.size(); i++) {
+                if (pages.get(i).getId().equals(pid)) {
+                    return pages.get(i);
                 }
             }
-        }
-        for (int i = 0; i < pages.size(); i++) {
-            if(pages.get(i).getId().equals(pid)){
-                return pages.get(i);
+            if (pages.size() == numPage) {
+                //pages.remove(pages.size()-1);
+                evictPage();
             }
+            DbFile dbf = Database.getCatalog().getDatabaseFile(pid.getTableId());
+            pages.add(dbf.readPage(pid));
+            return pages.get(pages.size() - 1);
         }
-        if(pages.size()==numPage){
-            //pages.remove(pages.size()-1);
-            evictPage();
-        }
-        DbFile dbf=Database.getCatalog().getDatabaseFile(pid.getTableId());
-        pages.add(dbf.readPage(pid));
-        return pages.get(pages.size()-1);
     }
 
     /**

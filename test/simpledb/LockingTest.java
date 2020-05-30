@@ -68,8 +68,6 @@ public class LockingTest extends TestUtil.CreateHeapFile {
       boolean expected) throws Exception {
 
     bp.getPage(tid1, pid1, perm1);
-//    Database.getBufferPool().getPage(tid2,pid2,perm2);
-//    bp.getPage(tid2,pid2,perm2);
     grabLock(tid2, pid2, perm2, expected);
   }
 

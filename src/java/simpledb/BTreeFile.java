@@ -480,15 +480,16 @@ public class BTreeFile implements DbFile {
 	 */
 	Page getPage(TransactionId tid, HashMap<PageId, Page> dirtypages, BTreePageId pid, Permissions perm)
 			throws DbException, TransactionAbortedException {
-		if(dirtypages.containsKey(pid)) {
-			return dirtypages.get(pid);
-		}
-		else {
-			Page p = Database.getBufferPool().getPage(tid, pid, perm);
-			if(perm == Permissions.READ_WRITE) {
-				dirtypages.put(pid, p);
+		synchronized (this) {
+			if (dirtypages.containsKey(pid)) {
+				return dirtypages.get(pid);
+			} else {
+				Page p = Database.getBufferPool().getPage(tid, pid, perm);
+				if (perm == Permissions.READ_WRITE) {
+					dirtypages.put(pid, p);
+				}
+				return p;
 			}
-			return p;
 		}
 	}
 

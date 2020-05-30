@@ -42,15 +42,9 @@ public class HeapFile implements DbFile {
             BufferPool bfp = Database.getBufferPool();
             HeapPageId hpid = new HeapPageId(getId(), pgno);
             HeapPage page = null;
-            try {
-                page = (HeapPage) bfp.getPage(tid, hpid, Permissions.READ_ONLY);
-                pgno++;
-                pageIterator = page.iterator();
-            } catch (TransactionAbortedException e) {
-                e.printStackTrace();
-            } catch (DbException e) {
-                e.printStackTrace();
-            }
+            page = (HeapPage) bfp.getPage(tid, hpid, Permissions.READ_ONLY);
+            pgno++;
+            pageIterator = page.iterator();
             while (pageIterator.hasNext()) {
                 tuples.add((Tuple) pageIterator.next());
             }
